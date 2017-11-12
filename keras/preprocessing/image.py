@@ -1089,12 +1089,18 @@ class DirectoryIterator(Iterator):
         batch_x = np.zeros((len(index_array),) + self.image_shape, dtype=K.floatx())
         grayscale = self.color_mode == 'grayscale'
         # build batch of image data
+        # added loading of a larger file (resized to target+pad) and cropping it to target size; for TF only
+        pad = 30
         for i, j in enumerate(index_array):
             fname = self.filenames[j]
             img = load_img(os.path.join(self.directory, fname),
                            grayscale=grayscale,
-                           target_size=self.target_size)
+                           target_size=(self.target_size[0] + pad, self.target_size[1] + pad))
+                           # target_size=self.target_size)
             x = img_to_array(img, data_format=self.data_format)
+            irx = np.random.randint(0, pad)
+            iry = np.random.randint(0, pad)
+            x = x[irx:irx+self.target_size[0], iry:iry+self.target_size[1], :]
             x = self.image_data_generator.random_transform(x)
             x = self.image_data_generator.standardize(x)
             batch_x[i] = x
